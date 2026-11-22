@@ -7,7 +7,9 @@ default:
 check:
     roc check package/main.roc
     roc check fuzz/main.roc
+    roc check bench/main.roc
     roc check diff/main.roc
+    roc check bench/check.roc
 
 # Run the tests with the default dev backend.
 test:
@@ -21,11 +23,11 @@ test-all:
     roc test --opt=size package/Sha1.roc
 
 fmt:
-    roc fmt package fuzz diff
+    roc fmt package fuzz bench diff
 
 # Fail if any file needs formatting.
 fmt-check:
-    roc fmt --check package fuzz diff
+    roc fmt --check package fuzz bench diff
 
 docs:
     roc docs package/main.roc --output=generated-docs
@@ -39,6 +41,18 @@ fuzz seconds="30":
 # Compare against GNU coreutils and OpenSSL on random inputs. See --help.
 diff *args:
     roc diff/main.roc "$@"
+
+# Time hashing SIZE bytes with the optimizing backend.
+bench size="1048576" iterations="200":
+    mkdir -p bench-out
+    roc build --opt=speed bench/main.roc --output=bench-out/roc
+    ./bench-out/roc {{size}} {{iterations}}
+
+# Fail if hashing falls below 3x the speed of a plain reference implementation.
+perf-check:
+    mkdir -p bench-out
+    roc build --opt=speed bench/check.roc --output=bench-out/check
+    ./bench-out/check
 
 # Bundle the package into dist/ for a release; prints the archive name.
 bundle:
