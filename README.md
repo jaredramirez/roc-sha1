@@ -23,14 +23,12 @@ a password hashing function for passwords.
 
 ## Usage
 
-Add the package to your app header. Copy the package URL from the notes of the
-[latest release](https://github.com/jaredramirez/roc-sha1/releases) in place
-of the `sha1` URL below.
+Add the package to your app header:
 
 ```roc
 app [main!] {
 	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
-	sha1: "https://github.com/jaredramirez/roc-sha1/releases/download/VERSION/HASH.tar.zst",
+	sha1: "https://github.com/jaredramirez/roc-sha1/releases/download/0.1.0/Ut9T4r8fpujaXBVV3aaDrFQZHHErAnmyAcMe2pDqGn8.tar.zst",
 }
 
 import pf.Stdout
