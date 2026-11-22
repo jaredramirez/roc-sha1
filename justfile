@@ -6,6 +6,8 @@ default:
 
 check:
     roc check package/main.roc
+    roc check fuzz/main.roc
+    roc check diff/main.roc
 
 # Run the tests with the default dev backend.
 test:
@@ -19,14 +21,24 @@ test-all:
     roc test --opt=size package/Sha1.roc
 
 fmt:
-    roc fmt package
+    roc fmt package fuzz diff
 
 # Fail if any file needs formatting.
 fmt-check:
-    roc fmt --check package
+    roc fmt --check package fuzz diff
 
 docs:
     roc docs package/main.roc --output=generated-docs
+
+# Check the fuzz examples, then explore for the given number of seconds.
+fuzz seconds="30":
+    mkdir -p fuzz-out/corpus
+    roc build --fuzz fuzz/main.roc --output=fuzz-out/sha1
+    cd fuzz-out && ./sha1 check && ./sha1 explore corpus --time={{seconds}}
+
+# Compare against GNU coreutils and OpenSSL on random inputs. See --help.
+diff *args:
+    roc diff/main.roc "$@"
 
 # Bundle the package into dist/ for a release; prints the archive name.
 bundle:
