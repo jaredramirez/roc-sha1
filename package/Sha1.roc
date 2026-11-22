@@ -95,9 +95,9 @@ Sha1 := [].{
 		is_eq = |left, right| left.bytes == right.bytes
 
 		## Feed the digest bytes into a regular non-cryptographic `Hasher`, so
-		## digests can be `Dict` keys and `Set` elements.
-		to_hash : Digest, Hasher -> Hasher
-		to_hash = |digest, hasher| hasher.write_bytes(digest.bytes)
+		## digests can be `Dict` keys and `Set` elements. The compiler derives
+		## it from the bytes, since RC1 gives no way to test a hand-written one.
+		to_hash : _
 
 		## Return a typed, human-readable digest.
 		to_inspect : Digest -> Str
@@ -121,7 +121,9 @@ Sha1 := [].{
 			buffered = state.buffer.len()
 			if buffered + bytes.len() < block_len {
 				# Not enough for a block yet
-				State.{ vars: state.vars, buffer: state.buffer.concat(bytes), len }
+				# A fresh list, so a slice of a large buffer isn't kept alive
+				buffer = if (buffered == 0) List.with_capacity(block_len).concat(bytes) else state.buffer.concat(bytes)
+				State.{ vars: state.vars, buffer, len }
 			} else if buffered == 0 {
 				(vars, next) = compress_blocks(state.vars, bytes, 0)
 				State.{ vars, buffer: leftover(bytes, next), len }
@@ -194,26 +196,26 @@ compress_blocks = |vars, bytes, start| {
 ## Pad the last bytes of the message, from `start` in `bytes`, compress the
 ## one or two final blocks, and return the digest bytes. `total` is the
 ## message length in bytes.
+## The last 8 bytes of the padding: the message length in bits, big-endian,
+## modulo 2^64. Its high 4 bytes only matter for messages of 512 MiB or more,
+## which no test hashes, so the tests check this directly.
+length_field : U64 -> List(U8)
+length_field = |total| {
+	bits = total.shl_wrap(3)
+	[56, 48, 40, 32, 24, 16, 8, 0].map(|shift| bits.shr_zf_wrap(shift).to_u8_wrap())
+}
+
 pad_and_finish : Vars, List(U8), U64, U64 -> List(U8)
 pad_and_finish = |vars, bytes, start, total| {
 	tail = bytes.drop_first(start)
 	# The tail, a 1 bit, zeros, and the 64-bit big-endian bit length fill one
 	# block, or two when fewer than 9 bytes are left in the first
 	padded_len = if (tail.len() < 56) block_len else block_len * 2
-	bits = total.shl_wrap(3)
 	var $block = List.with_capacity(padded_len).concat(tail).append(0x80)
 	while $block.len() < padded_len - 8 {
 		$block = $block.append(0)
 	}
-	$block = $block
-		.append(bits.shr_zf_wrap(56).to_u8_wrap())
-		.append(bits.shr_zf_wrap(48).to_u8_wrap())
-		.append(bits.shr_zf_wrap(40).to_u8_wrap())
-		.append(bits.shr_zf_wrap(32).to_u8_wrap())
-		.append(bits.shr_zf_wrap(24).to_u8_wrap())
-		.append(bits.shr_zf_wrap(16).to_u8_wrap())
-		.append(bits.shr_zf_wrap(8).to_u8_wrap())
-		.append(bits.to_u8_wrap())
+	$block = $block.concat(length_field(total))
 	(final_vars, _) = compress_blocks(vars, $block, 0)
 	(h0, h1, h2, h3, h4) = final_vars
 	List.with_capacity(digest_len)
@@ -821,6 +823,19 @@ expect Sha1.hash("abc".to_utf8()).to_bytes() == [0xa9, 0x99, 0x3e, 0x36, 0x47, 0
 expect Str.inspect(Sha1.hash("abc".to_utf8())) == "Sha1.Digest(\"a9993e364706816aba3e25717850c26c9cd0d89d\")"
 expect Sha1.hash("abc".to_utf8()) != Sha1.hash("abd".to_utf8())
 expect Set.from_list([Sha1.hash([]), Sha1.hash([1]), Sha1.hash([])]).len() == 2
+
+# The length field, including the high bytes only messages of 512 MiB or
+# more reach. 2^29 + 57 bytes of "a" hashes to 1646d762d7dd622327ae001f8683058a079ac785,
+# checked against Python's hashlib.
+expect length_field(0) == [0, 0, 0, 0, 0, 0, 0, 0]
+
+expect length_field(3) == [0, 0, 0, 0, 0, 0, 0, 24]
+
+expect length_field(0x2000_0000) == [0, 0, 0, 1, 0, 0, 0, 0]
+
+expect length_field(0x1234_5678_9ABC_DE01) == [0x91, 0xA2, 0xB3, 0xC4, 0xD5, 0xE6, 0xF0, 0x08]
+
+expect length_field(0xFFFF_FFFF_FFFF_FFFF) == [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF8]
 
 ## to_hex and from_hex round trip, and so do to_bytes and from_bytes
 expect {

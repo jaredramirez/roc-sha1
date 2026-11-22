@@ -53,27 +53,35 @@ check_from_hex = |text| {
 ## `from_hex` accept exactly the valid inputs
 test! : Input => Fuzz.Outcome
 test! = |{ data, cuts, text }| {
+	# A known answer, so the comparisons below can't all agree on a wrong
+	# digest. Digests are compared by their bytes, not `==`, so a broken
+	# `is_eq` can't hide a disagreement.
+	# (`take_first(0)` keeps the compiler from evaluating it at compile time)
+	if Sha1.hash("abc".to_utf8().concat(data.take_first(0))).to_hex() != "a9993e364706816aba3e25717850c26c9cd0d89d" {
+		crash "the known answer for abc is wrong"
+	}
 	digest = Sha1.hash(data)
+	bytes = digest.to_bytes()
 	chunks = chunks_of(data, cuts)
-	if Sha1.hash_chunks(chunks.iter()) != digest {
+	if Sha1.hash_chunks(chunks.iter()).to_bytes() != bytes {
 		crash "hash_chunks disagrees with hash"
 	}
 	first = chunks.first() ?? []
 	after_first = Sha1.State.empty().write(first)
 	snapshot = after_first.finish()
 	all = chunks.drop_first(1).fold(after_first, |state, chunk| state.write(chunk))
-	if all.finish() != digest {
+	if all.finish().to_bytes() != bytes {
 		crash "State.write disagrees with hash"
 	}
-	if snapshot != Sha1.hash(first) or after_first.finish() != snapshot {
+	if snapshot.to_bytes() != Sha1.hash(first).to_bytes() or after_first.finish().to_bytes() != snapshot.to_bytes() {
 		crash "writing after a snapshot changed it"
 	}
 
 	hex = digest.to_hex()
-	if Sha1.Digest.from_hex(hex) != Ok(digest) or Sha1.Digest.from_bytes(digest.to_bytes()) != Ok(digest) {
+	if Sha1.Digest.from_hex(hex).map_ok(|d| d.to_bytes()) != Ok(bytes) or Sha1.Digest.from_bytes(bytes).map_ok(|d| d.to_bytes()) != Ok(bytes) {
 		crash "a digest did not round trip"
 	}
-	if Sha1.Digest.from_hex(Str.from_utf8_lossy(hex.to_utf8().map(uppercase))) != Ok(digest) {
+	if Sha1.Digest.from_hex(Str.from_utf8_lossy(hex.to_utf8().map(uppercase))).map_ok(|d| d.to_bytes()) != Ok(bytes) {
 		crash "uppercase hex did not decode"
 	}
 

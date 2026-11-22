@@ -10,9 +10,11 @@ import sha1.Sha1
 
 ## A performance regression check. Hashing 1 MiB must stay at least
 ## `min_speedup` times faster than the plain textbook implementation below,
-## measured in the same process, so the check works on any machine. A change
-## that makes the unrolled compression function spill to memory, allocate, or
-## bounds check every word falls toward 1x and fails. Run with
+## measured in the same process, so the check works on any machine. It's
+## about 4-5x on macOS and 4x on Linux, so this catches a slowdown of roughly
+## 25-35%, such as falling back to loop-style rounds (about 1x) or an
+## allocation per word load (2.3x). Smaller regressions, such as an extra copy
+## of every block (3.8x), pass, so watch `just bench` too. Run with
 ## `just perf-check`, which builds with --opt=speed.
 min_speedup_tenths : U64
 min_speedup_tenths = 30
