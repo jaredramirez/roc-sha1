@@ -1,0 +1,10 @@
+.direnv
+.devenv
+devenv.local.nix
+devenv.local.yaml
+fuzz-out
+.roc-fuzz
+dist
+generated-docs
+package/LICENSE
+bench-out
