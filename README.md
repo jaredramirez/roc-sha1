@@ -5,7 +5,8 @@ SHA-1 for [Roc](https://www.roc-lang.org), written in pure Roc and following
 
 Roc's builtins have SHA-256 and BLAKE3 in `Crypto`, but not SHA-1. This
 package fills that gap with the same API as `Crypto.SHA256`, so it feels
-native. Written for the Roc 0.1.0_RC1 compiler.
+native. Written for the Roc 0.1.0_RC1 compiler. The API docs are at
+<https://jaredramirez.github.io/roc-sha1/>.
 
 ## Security
 
@@ -198,10 +199,12 @@ automatically.
 
 ## Releasing
 
-Push a version tag such as `0.1.0`. The release workflow runs the tests, the
-performance check, and the differential test. Then it bundles `package/` with
-`just bundle` and attaches the archive to a GitHub release whose notes give the
-package URL.
+Push a version tag such as `0.1.0`, or `0.2.0-rc.1` for a release candidate.
+The release workflow runs the tests, the performance check, and the
+differential test. Then it bundles `package/` with `just bundle` and attaches
+the archive to a GitHub release whose notes give the package URL. Release
+candidates are marked as prereleases. It then publishes the docs to GitHub
+Pages. To republish only the docs, run the Release workflow by hand.
 
 ## Layout
 
