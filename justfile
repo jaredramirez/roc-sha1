@@ -48,6 +48,10 @@ bench size="1048576" iterations="200":
     roc build --opt=speed bench/main.roc --output=bench-out/roc
     ./bench-out/roc {{size}} {{iterations}}
 
+# Compare with Rust, Go and Python. Needs `devenv --profile bench shell`.
+bench-compare:
+    python3 bench/compare/run.py
+
 # Fail if hashing falls below 3x the speed of a plain reference implementation.
 perf-check:
     mkdir -p bench-out

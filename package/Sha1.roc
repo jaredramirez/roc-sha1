@@ -200,23 +200,20 @@ compress_blocks = |vars, bytes, start| {
 ## modulo 2^64. Its high 4 bytes only matter for messages of 512 MiB or more,
 ## which no test hashes, so the tests check this directly.
 length_field : U64 -> List(U8)
-length_field = |total| {
-	bits = total.shl_wrap(3)
-	[56, 48, 40, 32, 24, 16, 8, 0].map(|shift| bits.shr_zf_wrap(shift).to_u8_wrap())
-}
+length_field = |total| List.with_capacity(8) |> append_u64_be(total.shl_wrap(3))
 
 pad_and_finish : Vars, List(U8), U64, U64 -> List(U8)
 pad_and_finish = |vars, bytes, start, total| {
-	tail = bytes.drop_first(start)
+	tail_len = bytes.len() - start
 	# The tail, a 1 bit, zeros, and the 64-bit big-endian bit length fill one
 	# block, or two when fewer than 9 bytes are left in the first
-	padded_len = if (tail.len() < 56) block_len else block_len * 2
-	var $block = List.with_capacity(padded_len).concat(tail).append(0x80)
-	while $block.len() < padded_len - 8 {
-		$block = $block.append(0)
-	}
-	$block = $block.concat(length_field(total))
-	(final_vars, _) = compress_blocks(vars, $block, 0)
+	padded_len = if (tail_len < 56) block_len else block_len * 2
+	block = List.with_capacity(padded_len)
+		.concat(bytes.drop_first(start))
+		.append(0x80)
+		.concat(zeros.take_first(padded_len - 9 - tail_len))
+		|> append_u64_be(total.shl_wrap(3))
+	(final_vars, _) = compress_blocks(vars, block, 0)
 	(h0, h1, h2, h3, h4) = final_vars
 	List.with_capacity(digest_len)
 		|> append_be(h0)
@@ -226,10 +223,17 @@ pad_and_finish = |vars, bytes, start, total| {
 		|> append_be(h4)
 }
 
+## Enough zeros for any padding
+zeros : List(U8)
+zeros = List.repeat(0, block_len * 2)
+
 ## The bytes of `bytes` from `start`, which are fewer than a block, copied so
 ## that a state does not keep a large input alive
 leftover : List(U8), U64 -> List(U8)
 leftover = |bytes, start| List.with_capacity(block_len).concat(bytes.drop_first(start))
+
+append_u64_be : List(U8), U64 -> List(U8)
+append_u64_be = |out, n| out |> append_be(n.shr_zf_wrap(32).to_u32_wrap()) |> append_be(n.to_u32_wrap())
 
 append_be : List(U8), U32 -> List(U8)
 append_be = |out, word|

@@ -27,6 +27,11 @@ jobs:
         # even though tee succeeds
         shell: bash
         run: devenv shell just perf-check | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Compare speed with Rust, Go and Python
+        # Runner timings are noisy, so this only keeps the comparison
+        # programs building and records the numbers in the job summary
+        shell: bash
+        run: devenv --profile bench shell just bench-compare | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Compare against coreutils and OpenSSL
         run: devenv shell just diff --count 2000
       - name: Fuzz for 60 seconds

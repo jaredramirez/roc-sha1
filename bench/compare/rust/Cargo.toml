@@ -1,0 +1,15 @@
+[package]
+name = "sha1-compare"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+# RustCrypto's sha1, which uses the CPU's SHA instructions when it has them
+sha1 = "0.10"
+# A small portable implementation with no CPU-specific code
+sha1_smol = "1"
+
+[profile.release]
+codegen-units = 1
+lto = true

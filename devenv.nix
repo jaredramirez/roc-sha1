@@ -49,6 +49,18 @@ in
     pkgs.openssl
   ];
 
+  # Other SHA-1 implementations for `just bench-compare`, kept out of the
+  # default shell so day-to-day work doesn't need Rust and Go. Enter it with
+  # `devenv --profile bench shell`.
+  profiles.bench.module = {
+    packages = [
+      pkgs.cargo
+      pkgs.rustc
+      pkgs.go
+      pkgs.python314
+    ];
+  };
+
   # One command per line: the test script runs with `set -e`, which ignores a
   # failure anywhere in an `a && b && c` list but the last, so a failing test
   # would otherwise let `devenv test` pass
