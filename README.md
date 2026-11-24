@@ -29,7 +29,7 @@ Add the package to your app header:
 ```roc
 app [main!] {
 	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
-	sha1: "https://github.com/jaredramirez/roc-sha1/releases/download/0.1.0/Ut9T4r8fpujaXBVV3aaDrFQZHHErAnmyAcMe2pDqGn8.tar.zst",
+	sha1: "https://github.com/jaredramirez/roc-sha1/releases/download/1.0.0/DZ7hdXcfbXfe2VQb9B95r8fGMaJX1NLA23cTu3TiTUfX.tar.zst",
 }
 
 import pf.Stdout
@@ -222,7 +222,7 @@ automatically.
 
 ## Releasing
 
-Push a version tag such as `0.1.0`, or `0.2.0-rc.1` for a release candidate.
+Push a version tag such as `1.1.0`, or `1.1.0-rc.1` for a release candidate.
 The release workflow runs the tests, the performance check, and the
 differential test. Then it bundles `package/` with `just bundle` and attaches
 the archive to a GitHub release whose notes give the package URL. Release
