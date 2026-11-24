@@ -130,7 +130,7 @@ Whole blocks are hashed straight from the input without copying, and `write`
 buffers at most 63 bytes between calls.
 
 On an Apple M5 Pro with `--opt=speed`, `hash` runs at about 1200 MB/s on
-1 MiB, and 64 bytes take about 145 ns. `hash_chunks` and `State` cost about
+1 MiB, and 64 bytes take about 135 ns. `hash_chunks` and `State` cost about
 2% more on 1 MiB written 4 KiB at a time.
 
 ### Compared with other libraries
@@ -140,16 +140,16 @@ same way, and prints throughput in MB/s. These are from the same M5 Pro.
 
 | Input | roc-sha1 | Rust `sha1` | Rust `sha1_smol` | Go `crypto/sha1` | Python `hashlib` |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 64 B | 441 | 744 | 1,422 | 1,641 | 369 |
-| 1 KiB | 1,088 | 1,420 | 1,306 | 3,335 | 2,311 |
-| 1 MiB | 1,207 | 1,500 | 1,279 | 3,552 | 3,548 |
+| 64 B | 463 | 744 | 1,422 | 1,361 | 361 |
+| 1 KiB | 1,098 | 1,422 | 1,306 | 3,335 | 2,270 |
+| 1 MiB | 1,207 | 1,499 | 1,299 | 3,553 | 3,548 |
 
 Both Rust crates run portable code here, and on large inputs roc-sha1 is
 within 20% of them. Go and Python's `hashlib`, which calls OpenSSL, use the
 CPU's SHA-1 instructions, which Roc doesn't expose, so they're about three
 times faster. With those instructions turned off (`OPENSSL_armcap=0`), OpenSSL
-runs at 1170 MB/s. On small inputs each call costs roc-sha1 about 40 ns more
-than Rust, mostly for allocating the padded last block and the digest.
+runs at 1170 MB/s. On small inputs each call costs roc-sha1 about 30 ns more
+than Rust, mostly for building the padded last block as a list.
 
 `just bench` prints these figures. `just perf-check` fails if `hash` or
 `hash_chunks` falls below 3x the speed of a plain textbook implementation

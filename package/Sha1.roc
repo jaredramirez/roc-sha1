@@ -215,11 +215,15 @@ pad_and_finish = |vars, bytes, start, total| {
 		|> append_u64_be(total.shl_wrap(3))
 	(final_vars, _) = compress_blocks(vars, block, 0)
 	(h0, h1, h2, h3, h4) = final_vars
-	List.with_capacity(digest_len)
-		|> append_be(h0)
-		|> append_be(h1)
-		|> append_be(h2)
-		|> append_be(h3)
+	# The first four words in one vector write, then the last word
+	U32x4.splat(0)
+		.with_lane(0, h0)
+		.with_lane(1, h1)
+		.with_lane(2, h2)
+		.with_lane(3, h3)
+		.to_u8x16_bits()
+		.table_lookup(byte_swap)
+		.append_to(List.with_capacity(digest_len))
 		|> append_be(h4)
 }
 
